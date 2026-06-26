@@ -18,13 +18,19 @@ erDiagram
 
     EXERCISES {
         INTEGER id PK
+        VARCHAR external_id UK
         VARCHAR name
+        VARCHAR body_part
+        VARCHAR target_muscle
+        JSONB secondary_muscles
         VARCHAR exercise_type
-        VARCHAR muscle_group
         VARCHAR difficulty
         VARCHAR equipment
-        TEXT technique
+        TEXT description
+        JSONB instructions
+        VARCHAR gif_url
         VARCHAR source
+        TIMESTAMP synced_at
     }
 
     WORKOUT_PROGRAMS {
@@ -86,6 +92,15 @@ erDiagram
         TIMESTAMP updated_at
     }
 
+    USER_ACTIVITIES {
+        INTEGER id PK
+        INTEGER user_id FK
+        VARCHAR action
+        TEXT description
+        JSONB metadata
+        TIMESTAMP created_at
+    }
+
     USERS ||--o{ WORKOUT_PROGRAMS : "создает программы"
     WORKOUT_PROGRAMS ||--o{ PROGRAM_EXERCISES : "содержит упражнения"
     EXERCISES ||--o{ PROGRAM_EXERCISES : "используется в программах"
@@ -93,6 +108,7 @@ erDiagram
     USERS ||--o{ BODY_METRICS : "записывает показатели"
     USERS ||--o{ CALCULATOR_RESULTS : "сохраняет расчеты"
     USERS ||--o{ CONTENT_ITEMS : "создает контент"
+    USERS ||--o{ USER_ACTIVITIES : "история действий"
 ```
 
 ## Описание связей
@@ -106,6 +122,7 @@ erDiagram
 | Users -> BodyMetrics | 1:N | Один пользователь может сохранять много записей с параметрами тела по разным датам |
 | Users -> CalculatorResults | 1:N | Один пользователь может сохранить много результатов калькуляторов; для гостя user_id может быть NULL |
 | Users -> ContentItems | 1:N | Один администратор или автор может создать много материалов |
+| Users -> UserActivities | 1:N | История действий пользователя в личном кабинете |
 | WorkoutPrograms <-> Exercises | M:N | Программа может содержать много упражнений, а одно упражнение может входить во многие программы. Эта связь реализована через промежуточную таблицу ProgramExercises |
 
 ## Внешние ключи
@@ -119,6 +136,26 @@ erDiagram
 | BodyMetrics | user_id | Users.id |
 | CalculatorResults | user_id | Users.id |
 | ContentItems | author_id | Users.id |
+| UserActivities | user_id | Users.id |
+
+## Маппинг WorkoutX → exercises
+
+Каталог упражнений синхронизируется с [WorkoutX API](https://workoutxapp.com). Внешний id хранится в `external_id`, в программах используется внутренний `id`.
+
+| WorkoutX | exercises |
+|----------|-----------|
+| `id` | `external_id` |
+| `name` | `name` |
+| `bodyPart` | `body_part` |
+| `target` | `target_muscle` |
+| `secondaryMuscles` | `secondary_muscles` |
+| `category` | `exercise_type` |
+| `difficulty` | `difficulty` |
+| `equipment` | `equipment` |
+| `description` | `description` |
+| `instructions` | `instructions` |
+| `gifUrl` | `gif_url` |
+| — | `source` = `'workoutx'` |
 
 ## Вопросы для самопроверки
 
